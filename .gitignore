@@ -1,0 +1,4 @@
+node_modules/
+.wrangler/
+# Local secrets for `wrangler pages dev` (contains TARGET_URL). Never commit.
+.dev.vars

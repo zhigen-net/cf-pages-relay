@@ -1,0 +1,8 @@
+name = "cf-pages-relay"
+# Cloudflare Pages project: serve the static `dist/` directory and run
+# `functions/[[path]].js` as the catch-all Functions route.
+pages_build_output_dir = "dist"
+compatibility_date = "2024-09-23"
+
+# Local development reads TARGET_URL (and optional HEALTH_PATH) from `.dev.vars`.
+# Copy `.dev.vars.example` to `.dev.vars` and fill in your upstream URL.

@@ -1,0 +1,5 @@
+# Copy this file to `.dev.vars` and fill in your upstream.
+# `.dev.vars` is git-ignored and used only by `wrangler pages dev`.
+TARGET_URL=https://your-worker.your-subdomain.workers.dev
+# Optional: path for the local health-check endpoint (default /__healthz)
+# HEALTH_PATH=/__healthz

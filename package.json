@@ -1,0 +1,20 @@
+{
+  "name": "cf-pages-relay",
+  "version": "1.0.0",
+  "description": "A tiny Cloudflare Pages reverse proxy that forwards any domain to a Worker on another Cloudflare account.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler pages dev dist",
+    "deploy": "wrangler pages deploy dist",
+    "test": "node --test"
+  },
+  "keywords": [
+    "cloudflare",
+    "pages",
+    "reverse-proxy",
+    "relay",
+    "functions"
+  ],
+  "license": "MIT"
+}

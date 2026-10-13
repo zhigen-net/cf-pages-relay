@@ -1,0 +1,25 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=cf-pages-relay
+        env:
+          # Pages environment variables (TARGET_URL, HEALTH_PATH, ...) are configured
+          # in the Cloudflare dashboard / `wrangler pages project` — not passed here.
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

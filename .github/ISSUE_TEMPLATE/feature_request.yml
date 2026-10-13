@@ -1,0 +1,16 @@
+name: Feature request
+description: Suggest an idea for cf-pages-relay
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem would this feature solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How should it work?
