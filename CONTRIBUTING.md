@@ -22,5 +22,6 @@ npm test                         # run the unit tests
 
 ## Releasing
 
-The `main` branch is the source of truth. Pushing to `main` triggers the deploy workflow
-(which requires the `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` secrets).
+The `main` branch is the source of truth. Pushing to `main` **automatically triggers a
+Cloudflare Pages build & deploy** (configured in the Cloudflare dashboard via *Connect to
+Git* — no GitHub Actions involved). CI only runs the test suite on PRs and never deploys.

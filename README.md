@@ -37,7 +37,8 @@ HTTP upstream).
 3. Build settings: Framework preset `None`, Build command empty, Build output directory `dist`.
 4. Add an environment variable `TARGET_URL` = your upstream, e.g.
    `https://my-worker.my-subdomain.workers.dev`.
-5. Deploy, then add your custom domain under **Custom domains**.
+5. Deploy. Once connected, **every push to `main` automatically triggers a new build & deploy** —
+   no GitHub Actions or extra setup required. Then add your custom domain under **Custom domains**.
 
 > After changing `TARGET_URL`, redeploy (or hit **Retry deployment**) for the change to take effect.
 
@@ -91,15 +92,24 @@ WebSocket upgrades (HTTP 101) are passed straight through.
 npm test   # runs test/relay.test.js with `node --test` — no install needed
 ```
 
-## Deploy via CLI
+## Deploy (Cloudflare dashboard — no GitHub Actions needed)
+
+This project is built and deployed **entirely from the Cloudflare dashboard**:
+
+1. **Workers & Pages → Create → Pages → Connect to Git**, pick this repo, set the production
+   branch to `main`, build output directory `dist`.
+2. Add the `TARGET_URL` environment variable (plus `HEALTH_PATH` if you change it).
+3. Push to `main` — Cloudflare builds and deploys automatically. To change `TARGET_URL`,
+   edit the variable and **Retry deployment**.
+
+You can also deploy manually from the CLI if you prefer:
 
 ```bash
 wrangler pages deploy dist
 ```
 
-A GitHub Actions workflow (`.github/workflows/deploy.yml`) is included; set the
-`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets to enable automatic
-deploys on push to `main`.
+> CI (`.github/workflows/ci.yml`) only runs the test suite on pull requests — it never
+> deploys. Deployment stays in the Cloudflare dashboard.
 
 ## Contributing
 
@@ -115,6 +125,8 @@ Worker）通过你自己的自定义域名暴露出来，解决「Worker 无法�
 `Domain`，让 Cookie 和重定向都落在你的域名上，同时支持 WebSocket。仅约 100 行、零依赖、带
 `node --test` 单元测试。
 
-部署：在**拥有域名的** Cloudflare 账号里建 Pages 项目 → 生产分支 `main` → 构建输出目录 `dist`
-→ 添加环境变量 `TARGET_URL` 指向上游 → 绑定自定义域名即可。本地开发 `cp .dev.vars.example
-.dev.vars` 后 `npm run dev`。
+部署：在**拥有域名的** Cloudflare 账号里 **Workers & Pages → 创建 → Pages → 连接 Git**，选本仓库
+→ 生产分支 `main` → 构建输出目录 `dist` → 添加环境变量 `TARGET_URL` 指向上游 → 绑定自定义域名。
+连上 Git 后，**每次 push 到 `main` 都会自动触发 Cloudflare 构建部署**，全程在 CF 后台完成，无需
+GitHub Actions。修改 `TARGET_URL` 后重新部署（或点「重试部署」）即可生效。本地开发 `cp
+.dev.vars.example .dev.vars` 后 `npm run dev`。
