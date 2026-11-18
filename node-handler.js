@@ -9,6 +9,10 @@ import { relay } from './functions/[[path]].js'
 function fetchUpstream(url, { method, headers, body, signal }) {
   const transport = new URL(url).protocol === 'https:' ? https : http
 
+  if (body && !headers.has('content-length')) {
+    headers.set('transfer-encoding', 'chunked')
+  }
+
   return new Promise((resolve, reject) => {
     const request = transport.request(url, {
       method,
@@ -34,6 +38,10 @@ function fetchUpstream(url, { method, headers, body, signal }) {
   })
 }
 
+export function relayWithNode(request, env) {
+  return relay(request, env, fetchUpstream)
+}
+
 export function createHandler(env = process.env) {
   return async function handleRequest(req, res) {
     const abort = new AbortController()
@@ -55,7 +63,7 @@ export function createHandler(env = process.env) {
         duplex: 'half',
         signal: abort.signal,
       })
-      const response = await relay(request, env, fetchUpstream)
+      const response = await relayWithNode(request, env)
 
       for (const [name, value] of response.headers) {
         if (name !== 'set-cookie') res.setHeader(name, value)

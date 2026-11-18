@@ -3,8 +3,8 @@ import assert from 'node:assert/strict'
 import http from 'node:http'
 import { relay } from '../functions/[[path]].js'
 import esa from '../esa/index.js'
-import edgeOneRoot from '../edge-functions/index.js'
-import edgeOnePath from '../edge-functions/[[default]].js'
+import edgeOneRoot from '../cloud-functions/index.js'
+import edgeOnePath from '../cloud-functions/[[default]].js'
 
 let server
 let baseUrl
@@ -143,7 +143,7 @@ test('ESA Pages reads the third fetch argument and relays the original request',
   assert.equal(data.xfh, 'esa.example.com')
 })
 
-test('EdgeOne Pages handles root and nested paths with the project environment', async () => {
+test('EdgeOne Cloud Functions handles root and nested paths with the project environment', async () => {
   const env = { TARGET_URL: baseUrl, HEALTH_PATH: '/status' }
   for (const [handle, pathname] of [[edgeOneRoot, '/?x=1'], [edgeOnePath, '/a/b?x=2']]) {
     const response = await handle({
@@ -160,4 +160,32 @@ test('EdgeOne Pages handles root and nested paths with the project environment',
     env,
   })
   assert.equal(await health.text(), 'ok')
+})
+
+
+test('EdgeOne Cloud Functions relay a binary request larger than 1 MiB', async () => {
+  const payload = new Uint8Array(2 * 1024 * 1024)
+  payload.fill(0xab)
+  let received
+  const upstream = http.createServer((req, res) => {
+    received = [req.method, req.url, req.headers['content-type']]
+    req.pipe(res)
+  })
+  await new Promise((resolve) => upstream.listen(0, '127.0.0.1', resolve))
+
+  try {
+    const response = await edgeOnePath({
+      request: new Request('https://edgeone.example.com/v1/files?kind=binary', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/octet-stream' },
+        body: payload,
+      }),
+      env: { TARGET_URL: `http://127.0.0.1:${upstream.address().port}` },
+    })
+    assert.equal(response.status, 200)
+    assert.deepEqual(new Uint8Array(await response.arrayBuffer()), payload)
+    assert.deepEqual(received, ['PUT', '/v1/files?kind=binary', 'application/octet-stream'])
+  } finally {
+    await new Promise((resolve) => upstream.close(resolve))
+  }
 })

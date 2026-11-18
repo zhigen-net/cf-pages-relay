@@ -5,7 +5,7 @@
 | 平台 | 部署方式 | 监听端口或配置 |
 | --- | --- | --- |
 | 阿里云 ESA Pages | 从 GitHub 导入，使用 `esa.jsonc` 和 `esa/index.js` | 设置运行时函数变量 `TARGET_URL` |
-| 腾讯云 EdgeOne Pages | 从 Git 导入，使用 `edgeone.json` 和 `edge-functions/` | 设置项目环境变量 `TARGET_URL` |
+| 腾讯云 EdgeOne Pages | 从 Git 导入，使用 `edgeone.json` 和 `cloud-functions/` | 设置项目环境变量 `TARGET_URL` |
 | Cloudflare Pages | 从 Git 导入仓库 | Framework preset 选 None，构建命令留空，输出目录 `dist` |
 | 阿里云函数计算 FC | Web 函数，上传下方代码包或使用容器镜像 | `9000` |
 | 腾讯云 SCF | WebServer 镜像函数，使用仓库的 `Dockerfile` | `9000` |
@@ -25,10 +25,14 @@
 ## 腾讯云 EdgeOne Pages
 
 1. 在 EdgeOne Pages 导入本仓库，选择 `main`，使用仓库根目录。选择静态或 Other 预设，构建命令留空，输出目录为 `dist`，仓库的 `edgeone.json` 已声明该目录。
-2. 在项目的环境变量中添加 `TARGET_URL`，然后部署或重新部署。边缘函数通过 `context.env` 读取变量。
-3. `edge-functions/index.js` 处理根路径，`edge-functions/[[default]].js` 处理业务子路径。使用项目域名验证根路径、带查询参数的子路径和 `/__healthz`。
+2. 在项目的环境变量中添加 `TARGET_URL`，然后部署或重新部署。Cloud Functions 通过 `context.env` 读取变量。
+3. `cloud-functions/index.js` 处理根路径，`cloud-functions/[[default]].js` 处理业务子路径。使用项目域名验证根路径、带查询参数的子路径和 `/__healthz`。
 
-[EdgeOne Pages 边缘函数](https://pages.edgeone.ai/document/edge-functions) · [EdgeOne Pages 配置文件](https://pages.edgeone.ai/zh/document/edgeone-json)
+EdgeOne Pages 使用 Node.js Cloud Functions。平台文档列出的请求与响应体上限为 6 MB。若项目原先部署了旧版 Edge Functions，需要重新部署当前分支，使原有 API 路径改由 Cloud Functions 处理。重新部署后，可用实际 API 路径发送一个超过 1 MB 且低于 6 MB 的有效请求来验证。
+
+内联 Base64 图片或音频会增加约三分之一的数据量，平台上限按整个请求体计算。上游支持文件 URL 时，可先上传到对象存储，再传 URL。Models 网关的 25 MB 上限适用于通过该服务发起的模型调用，现有 `TARGET_URL` 的通用中转仍走 Cloud Functions。
+
+[EdgeOne Cloud Functions 限制](https://pages.edgeone.ai/document/cloud-functions) · [Node.js 函数路由](https://pages.edgeone.ai/document/node-functions) · [EdgeOne Pages 配置文件](https://pages.edgeone.ai/zh/document/edgeone-json)
 
 ## 阿里云函数计算 FC
 
