@@ -13,9 +13,9 @@ npm test                         # run the unit tests
 
 ## Guidelines
 
-- **Keep it dependency-free.** The whole proxy is one file with no runtime dependencies.
+- **Keep it dependency-free.** The shared relay and platform adapters have no runtime dependencies.
   Add a dependency only if there is a very strong reason.
-- **Tests are required for behavior changes.** Tests live in `test/relay.test.js` and run
+- **Tests are required for behavior changes.** Tests live in `test/` and run
   with the built-in Node test runner (`npm test`) — no install step.
 - **Run the tests before opening a PR.** CI also runs them on every push/PR.
 - Open an issue first for anything more than a trivial fix so we can agree on the approach.

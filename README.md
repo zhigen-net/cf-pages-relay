@@ -1,6 +1,8 @@
 # cf-pages-relay
 
-> A tiny, zero-dependency Cloudflare Pages reverse proxy.
+> A zero-dependency reverse proxy for Pages, serverless functions, and Node.js.
+
+[多平台部署指南](./DEPLOYMENT.zh-CN.md)
 
 Point it at any upstream — typically a Cloudflare **Worker** that lives in a *different*
 Cloudflare account — and `cf-pages-relay` serves that upstream from a custom domain you
@@ -25,9 +27,9 @@ HTTP upstream).
 - Rewrites `Location` redirects so they stay on your own domain
 - Strips the `Domain` attribute from `Set-Cookie` so cookies land on your domain
 - Sets `X-Forwarded-Host` / `X-Forwarded-Proto` / `X-Forwarded-For`
-- WebSocket upgrade (HTTP 101) passthrough
+- WebSocket upgrade (HTTP 101) on the Cloudflare Pages entry point
 - Optional local health-check endpoint
-- Zero dependencies, ~100 lines, fully unit-tested with `node --test`
+- Zero dependencies, tested with `node --test`
 
 ## Quick start (Cloudflare dashboard)
 
@@ -66,35 +68,35 @@ The catch-all Pages Function `functions/[[path]].js` builds the upstream URL fro
 `TARGET_URL` + the incoming path/query, copies the request headers (minus hop-by-hop
 headers), attaches the forwarded headers, and calls `fetch`. The upstream response is
 returned as-is except for the `Location` and `Set-Cookie` rewrites described above.
-WebSocket upgrades (HTTP 101) are passed straight through.
+The Cloudflare Pages entry point passes WebSocket upgrade responses (HTTP 101) through.
 
 > **Security:** this is a *fixed-target* reverse proxy — it only ever forwards to the single
 > configured `TARGET_URL`. It is **not** an open proxy.
 
-## Project structure
+## Deployment targets
 
-```
-.
-├── functions/
-│   └── [[path]].js    # catch-all Pages Function — the entire proxy (testable via `relay()`)
-├── dist/
-│   └── _routes.json  # routes all paths to Pages Functions
-├── test/
-│   └── relay.test.js # unit tests for `node --test` (no dependencies)
-├── wrangler.toml
-├── .dev.vars.example
-└── package.json
-```
+| Platform | Entry point |
+| --- | --- |
+| Cloudflare Pages | `functions/[[path]].js` and `dist/_routes.json` |
+| Alibaba Cloud Function Compute | Web function with `node server.js` or the Docker image |
+| Tencent Cloud SCF | WebServer image function built from `Dockerfile` |
+| Vercel | `server.ts` (auto-detected Node server) |
+| Netlify | `netlify/edge-functions/relay.js` and `netlify.toml` |
+| Node.js host or container | Node.js 22+, `npm start`, port `PORT` or `9000` |
+
+Static-only hosting, including GitHub Pages and bare object storage, requires a separate
+backend or a reverse proxy at the CDN layer to handle HTTP requests. See the
+[deployment guide](./DEPLOYMENT.zh-CN.md) for setup and runtime limits.
 
 ## Testing
 
 ```bash
-npm test   # runs test/relay.test.js with `node --test` — no install needed
+npm test   # runs the relay and Node HTTP integration tests with `node --test` — no install needed
 ```
 
 ## Deploy (Cloudflare dashboard — no GitHub Actions needed)
 
-This project is built and deployed **entirely from the Cloudflare dashboard**:
+This project is built and deployed from the Cloudflare dashboard:
 
 1. **Workers & Pages → Create → Pages → Connect to Git**, pick this repo, set the production
    branch to `main`, build output directory `dist`.
@@ -122,7 +124,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md). Released under the [MIT License](./LIC
 一个零依赖的 Cloudflare Pages 反向代理。把一个上游（通常是**另一个 Cloudflare 账号**下的
 Worker）通过你自己的自定义域名暴露出来，解决「Worker 无法绑定其他 Cloudflare 账号下的域名」
 的限制。它原样转发路径、参数、方法、请求体与请求头，并重写 `Location` 与 `Set-Cookie` 的
-`Domain`，让 Cookie 和重定向都落在你的域名上，同时支持 WebSocket。仅约 100 行、零依赖、带
+`Domain`，让 Cookie 和重定向都落在你的域名上，Cloudflare 入口支持 WebSocket。项目零依赖、带
 `node --test` 单元测试。
 
 部署：在**拥有域名的** Cloudflare 账号里 **Workers & Pages → 创建 → Pages → 连接 Git**，选本仓库

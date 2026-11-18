@@ -15,6 +15,7 @@ const HOP_BY_HOP = new Set([
   'proxy-authenticate',
   'proxy-authorization',
   'te',
+  'trailer',
   'trailers',
   'transfer-encoding',
   'upgrade',
@@ -26,7 +27,7 @@ const HOP_BY_HOP = new Set([
  * @param {Record<string,string>} [env] Bindings/env variables.
  * @returns {Promise<Response>}
  */
-export async function relay(request, env = {}) {
+export async function relay(request, env = {}, fetchUpstream = fetch) {
   const target = env.TARGET_URL || env.URL
   if (!target) {
     return new Response('Missing required environment variable TARGET_URL', { status: 500 })
@@ -35,8 +36,11 @@ export async function relay(request, env = {}) {
   let base
   try {
     base = new URL(target)
+    if (base.protocol !== 'http:' && base.protocol !== 'https:') {
+      return new Response('TARGET_URL must use HTTP or HTTPS', { status: 500 })
+    }
   } catch {
-    return new Response('TARGET_URL is not a valid URL: ' + target, { status: 500 })
+    return new Response('TARGET_URL must be a valid HTTP or HTTPS URL', { status: 500 })
   }
 
   const incoming = new URL(request.url)
@@ -56,6 +60,10 @@ export async function relay(request, env = {}) {
 
   const headers = new Headers(request.headers)
   for (const h of HOP_BY_HOP) headers.delete(h)
+  for (const h of (request.headers.get('connection') || '').split(',')) {
+    if (h.trim()) headers.delete(h.trim())
+  }
+  headers.delete('host')
 
   headers.set('X-Forwarded-Host', incoming.host)
   headers.set('X-Forwarded-Proto', incoming.protocol.replace(':', ''))
@@ -70,11 +78,12 @@ export async function relay(request, env = {}) {
   const hasBody = method !== 'GET' && method !== 'HEAD'
   if (!hasBody) headers.delete('content-length')
 
-  const response = await fetch(upstream.toString(), {
+  const response = await fetchUpstream(upstream.toString(), {
     method: request.method,
     headers,
     body: hasBody ? request.body : undefined,
     redirect: 'manual',
+    signal: request.signal,
     // Required by Node's fetch (undici) when streaming a request body.
     duplex: hasBody ? 'half' : undefined,
   })
@@ -83,6 +92,10 @@ export async function relay(request, env = {}) {
   if (response.status === 101) return response
 
   const out = new Response(response.body, response)
+  for (const h of HOP_BY_HOP) out.headers.delete(h)
+  for (const h of (response.headers.get('connection') || '').split(',')) {
+    if (h.trim()) out.headers.delete(h.trim())
+  }
 
   // Rewrite redirects that point back at the upstream host to the current host,
   // so Location headers stay on the Pages domain.
@@ -94,6 +107,7 @@ export async function relay(request, env = {}) {
         const rewritten = new URL(incoming.origin)
         rewritten.pathname = loc.pathname
         rewritten.search = loc.search
+        rewritten.hash = loc.hash
         out.headers.set('Location', rewritten.toString())
       }
     } catch {
@@ -115,5 +129,10 @@ export async function relay(request, env = {}) {
 }
 
 export async function onRequest(context) {
-  return relay(context.request, context.env)
+  return relay(context.request, context.env, (url, options) => {
+    if (context.request.headers.get('upgrade')?.toLowerCase() === 'websocket') {
+      options.headers.set('Upgrade', 'websocket')
+    }
+    return fetch(url, options)
+  })
 }
