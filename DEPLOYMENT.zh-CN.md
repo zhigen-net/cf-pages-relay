@@ -4,12 +4,31 @@
 
 | 平台 | 部署方式 | 监听端口或配置 |
 | --- | --- | --- |
+| 阿里云 ESA Pages | 从 GitHub 导入，使用 `esa.jsonc` 和 `esa/index.js` | 设置运行时函数变量 `TARGET_URL` |
+| 腾讯云 EdgeOne Pages | 从 Git 导入，使用 `edgeone.json` 和 `edge-functions/` | 设置项目环境变量 `TARGET_URL` |
 | Cloudflare Pages | 从 Git 导入仓库 | Framework preset 选 None，构建命令留空，输出目录 `dist` |
 | 阿里云函数计算 FC | Web 函数，上传下方代码包或使用容器镜像 | `9000` |
 | 腾讯云 SCF | WebServer 镜像函数，使用仓库的 `Dockerfile` | `9000` |
 | Vercel | 从 Git 导入仓库 | 自动识别 `server.ts`，使用 Node.js 22 或更新版本 |
 | Netlify | 从 Git 导入仓库 | 使用仓库的 `netlify.toml`，给 Functions 作用域设置 `TARGET_URL` |
 | 其他 Node.js 或容器平台 | Node.js 22+，启动命令 `npm start`，或构建 Docker 镜像 | `PORT`，默认 `9000` |
+
+## 阿里云 ESA Pages
+
+1. 在 ESA 控制台进入「边缘计算和 AI → 函数和 Pages」，创建 Pages 并从 GitHub 导入本仓库。选择 `main`，根目录使用仓库根目录。
+2. 仓库的 `esa.jsonc` 将 `esa/index.js` 设为边缘函数入口。这个项目只需要函数入口，静态资源目录留空。
+3. 在项目的「基本信息 → 函数变量」给生产环境添加 `TARGET_URL`，然后发布生产版本。测试分支使用测试环境自己的变量。修改变量后重新发布。
+4. 用 Pages 访问域名验证 `/__healthz`、`/` 和业务子路径，再绑定自定义域名。
+
+[ESA Pages 构建与路由](https://help.aliyun.com/zh/edge-security-acceleration/esa/user-guide/build-pages) · [运行时函数变量](https://help.aliyun.com/zh/edge-security-acceleration/esa/user-guide/function-variable)
+
+## 腾讯云 EdgeOne Pages
+
+1. 在 EdgeOne Pages 导入本仓库，选择 `main`，使用仓库根目录。选择静态或 Other 预设，构建命令留空，输出目录为 `dist`，仓库的 `edgeone.json` 已声明该目录。
+2. 在项目的环境变量中添加 `TARGET_URL`，然后部署或重新部署。边缘函数通过 `context.env` 读取变量。
+3. `edge-functions/index.js` 处理根路径，`edge-functions/[[default]].js` 处理业务子路径。使用项目域名验证根路径、带查询参数的子路径和 `/__healthz`。
+
+[EdgeOne Pages 边缘函数](https://pages.edgeone.ai/document/edge-functions) · [EdgeOne Pages 配置文件](https://pages.edgeone.ai/zh/document/edgeone-json)
 
 ## 阿里云函数计算 FC
 

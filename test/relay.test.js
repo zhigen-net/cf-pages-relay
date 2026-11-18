@@ -2,6 +2,9 @@ import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import http from 'node:http'
 import { relay } from '../functions/[[path]].js'
+import esa from '../esa/index.js'
+import edgeOneRoot from '../edge-functions/index.js'
+import edgeOnePath from '../edge-functions/[[default]].js'
 
 let server
 let baseUrl
@@ -123,4 +126,38 @@ test('appends client IP to X-Forwarded-For', async () => {
   )
   const data = await res.json()
   assert.equal(data.xff, '203.0.113.7')
+})
+
+
+test('ESA Pages reads the third fetch argument and relays the original request', async () => {
+  const request = new Request('https://esa.example.com/nested/page?a=1', {
+    method: 'POST',
+    body: 'hello ESA',
+  })
+  const response = await esa.fetch(request, {}, { TARGET_URL: baseUrl })
+  assert.equal(response.status, 200)
+  const data = await response.json()
+  assert.equal(data.url, '/nested/page?a=1')
+  assert.equal(data.method, 'POST')
+  assert.equal(data.body, 'hello ESA')
+  assert.equal(data.xfh, 'esa.example.com')
+})
+
+test('EdgeOne Pages handles root and nested paths with the project environment', async () => {
+  const env = { TARGET_URL: baseUrl, HEALTH_PATH: '/status' }
+  for (const [handle, pathname] of [[edgeOneRoot, '/?x=1'], [edgeOnePath, '/a/b?x=2']]) {
+    const response = await handle({
+      request: new Request('https://edgeone.example.com' + pathname),
+      env,
+    })
+    assert.equal(response.status, 200)
+    const data = await response.json()
+    assert.equal(data.url, pathname)
+    assert.equal(data.xfh, 'edgeone.example.com')
+  }
+  const health = await edgeOnePath({
+    request: new Request('https://edgeone.example.com/status'),
+    env,
+  })
+  assert.equal(await health.text(), 'ok')
 })

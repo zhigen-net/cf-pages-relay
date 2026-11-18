@@ -77,6 +77,8 @@ The Cloudflare Pages entry point passes WebSocket upgrade responses (HTTP 101) t
 
 | Platform | Entry point |
 | --- | --- |
+| Alibaba Cloud ESA Pages | `esa.jsonc` and `esa/index.js` |
+| Tencent Cloud EdgeOne Pages | `edgeone.json` and `edge-functions/` |
 | Cloudflare Pages | `functions/[[path]].js` and `dist/_routes.json` |
 | Alibaba Cloud Function Compute | Web function with `node server.js` or the Docker image |
 | Tencent Cloud SCF | WebServer image function built from `Dockerfile` |
